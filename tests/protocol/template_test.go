@@ -11,39 +11,27 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/andreitelteu/inertia-go-solid-template/app/server"
 )
 
-func templateRoot(t *testing.T) string {
-	t.Helper()
-	root := t.TempDir()
-	manifest := filepath.Join(root, "public/build/.vite")
-	assets := filepath.Join(root, "public/build/assets")
-	for _, dir := range []string{manifest, assets} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatal(err)
-		}
+func templateAssets() fstest.MapFS {
+	// Match embedded production assets without leaving cached OS file handles
+	// open while testing.TempDir removes fixtures on Windows.
+	return fstest.MapFS{
+		".vite/manifest.json": {Data: []byte(`{"resources/js/app.tsx":{"file":"assets/app-test.js","css":["assets/app-test.css"]}}`)},
+		"assets/app-test.js":  {Data: []byte("console.log('template fixture')")},
+		"assets/app-test.css": {Data: []byte("body{margin:0}")},
 	}
-	files := map[string]string{
-		filepath.Join(manifest, "manifest.json"): `{"resources/js/app.tsx":{"file":"assets/app-test.js","css":["assets/app-test.css"]}}`,
-		filepath.Join(assets, "app-test.js"):     "console.log('template fixture')",
-		filepath.Join(assets, "app-test.css"):    "body{margin:0}",
-	}
-	for name, body := range files {
-		if err := os.WriteFile(name, []byte(body), 0644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	return root
 }
 
 func templateHandler(t *testing.T) http.Handler {
 	t.Helper()
-	root := templateRoot(t)
+	root := t.TempDir()
 	h, err := server.NewWithOptions(root, server.Options{
 		Demo: true, Environment: "demo",
-		AssetFS: os.DirFS(filepath.Join(root, "public", "build")),
+		AssetFS: templateAssets(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -332,10 +320,10 @@ func TestTemplateRouteParameterAndRegistry(t *testing.T) {
 
 func TestTemplateProductionDisablesDemoDiagnostics(t *testing.T) {
 	t.Setenv("APP_KEY", strings.Repeat("01", 32))
-	root := templateRoot(t)
+	root := t.TempDir()
 	app, err := server.NewWithOptions(root, server.Options{
 		Environment: "production",
-		AssetFS:     os.DirFS(filepath.Join(root, "public", "build")),
+		AssetFS:     templateAssets(),
 	})
 	if err != nil {
 		t.Fatal(err)

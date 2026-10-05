@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -82,6 +83,12 @@ func NewWithOptions(root string, options Options) (*fiber.App, error) {
 		FS: assetFS, Browse: false, MaxAge: 31536000,
 		ModifyResponse: func(c fiber.Ctx) error {
 			c.Set("Cache-Control", "public, max-age=31536000, immutable")
+			// Windows MIME registrations can be absent or incorrect. In
+			// particular, nosniff requires module scripts/styles to have a
+			// browser-compatible type, and fonts must not depend on sniffing.
+			if contentType := assetContentType(c.Path()); contentType != "" {
+				c.Set("Content-Type", contentType)
+			}
 			return nil
 		},
 	})
@@ -110,17 +117,10 @@ func defaultEnvironment() string {
 // Hidden files and parent traversal remain private even through encoded slashes,
 // percent-encoded names, nested encodings or backslash separators.
 func publicAssetPath(assetPath string) bool {
-	for strings.Contains(assetPath, "%") {
-		decoded, err := url.PathUnescape(assetPath)
-		if err != nil {
-			return false
-		}
-		if decoded == assetPath {
-			break
-		}
-		assetPath = decoded
+	assetPath, valid := decodedAssetPath(assetPath)
+	if !valid {
+		return false
 	}
-	assetPath = strings.ReplaceAll(assetPath, "\\", "/")
 	if assetPath == "/build" || assetPath == "/build/" {
 		return false
 	}
@@ -130,6 +130,46 @@ func publicAssetPath(assetPath string) bool {
 		}
 	}
 	return true
+}
+
+func decodedAssetPath(assetPath string) (string, bool) {
+	for strings.Contains(assetPath, "%") {
+		decoded, err := url.PathUnescape(assetPath)
+		if err != nil {
+			return "", false
+		}
+		if decoded == assetPath {
+			break
+		}
+		assetPath = decoded
+	}
+	assetPath = strings.ReplaceAll(assetPath, "\\", "/")
+	return assetPath, true
+}
+
+func assetContentType(assetPath string) string {
+	assetPath, valid := decodedAssetPath(assetPath)
+	if !valid {
+		return ""
+	}
+	switch strings.ToLower(path.Ext(assetPath)) {
+	case ".js", ".mjs":
+		return "text/javascript; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".woff":
+		return "font/woff"
+	case ".woff2":
+		return "font/woff2"
+	case ".ttf":
+		return "font/ttf"
+	case ".otf":
+		return "font/otf"
+	case ".wasm":
+		return "application/wasm"
+	default:
+		return ""
+	}
 }
 
 // HTTPHandler exists for net/http-based test tools and embedding only. It

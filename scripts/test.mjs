@@ -12,6 +12,7 @@ try {
   await check('TypeScript', 'npm', ['run', 'typecheck'])
   await check('Embedded production build', 'go', ['run', '-buildvcs=false', '.', 'artisan', 'build'], { env: goEnv })
   await check('Go tests with race detector', 'go', ['test', '-race', '-count=1', './...'], { env: goEnv })
+  await check('Portable embedded server', 'node', ['scripts/smoke.mjs'])
   await check('Chromium browser scenarios', 'npm', ['exec', '--', 'playwright', 'test', ...process.argv.slice(2)])
 } catch (error) { console.error(error.message); process.exitCode = 1 }
 finally {

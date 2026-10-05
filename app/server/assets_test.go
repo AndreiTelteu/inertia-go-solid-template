@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -98,6 +99,59 @@ func TestAssetFilesystemServesEntireBundleWithoutDiskFiles(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(root, "public")); !os.IsNotExist(err) {
 		t.Fatalf("server unexpectedly wrote or required public files: %v", err)
+	}
+}
+
+func TestStaticAssetTypesIgnoreIncorrectSystemMIMERegistrations(t *testing.T) {
+	bundle := fixtureBundle()
+	resources := []struct{ extension, contentType string }{
+		{".js", "text/javascript; charset=utf-8"},
+		{".mjs", "text/javascript; charset=utf-8"},
+		{".css", "text/css; charset=utf-8"},
+		{".woff", "font/woff"},
+		{".woff2", "font/woff2"},
+		{".ttf", "font/ttf"},
+		{".otf", "font/otf"},
+		{".wasm", "application/wasm"},
+	}
+	for _, resource := range resources {
+		original := mime.TypeByExtension(resource.extension)
+		extension := resource.extension
+		if err := mime.AddExtensionType(extension, "text/plain"); err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			// Go's MIME table has no remove operation. An originally unknown
+			// extension is restored to the neutral binary fallback in this test
+			// process; every known registration is restored exactly.
+			if original == "" {
+				original = "application/octet-stream"
+			}
+			if err := mime.AddExtensionType(extension, original); err != nil {
+				t.Error(err)
+			}
+		})
+		bundle["assets/mime-test"+extension] = &fstest.MapFile{Data: []byte("ordinary ASCII bytes")}
+	}
+	app, err := NewWithOptions(t.TempDir(), Options{Environment: "demo", AssetFS: bundle})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, resource := range resources {
+		response, body := fiberResponse(t, app, "GET", "/build/assets/mime-test"+resource.extension, nil)
+		if response.StatusCode != 200 || string(body) != "ordinary ASCII bytes" {
+			t.Fatalf("asset body %s: %d %s", resource.extension, response.StatusCode, body)
+		}
+		if actual := response.Header.Get("Content-Type"); actual != resource.contentType {
+			t.Errorf("asset %s trusted system MIME table: got %q want %q", resource.extension, actual, resource.contentType)
+		}
+		if response.Header.Get("X-Content-Type-Options") != "nosniff" {
+			t.Error("asset lost nosniff header")
+		}
+	}
+	response, _ := fiberResponse(t, app, "GET", "/build/assets/mime-test.%77off2", nil)
+	if response.StatusCode != 200 || response.Header.Get("Content-Type") != "font/woff2" {
+		t.Fatalf("encoded font extension: %d %s", response.StatusCode, response.Header.Get("Content-Type"))
 	}
 }
 

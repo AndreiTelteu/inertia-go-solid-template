@@ -28,6 +28,18 @@ jobs:
       - run: npm run typecheck
       - run: go test -buildvcs=false ./...
       - run: go run -buildvcs=false . artisan build
+      - name: POSIX launcher
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./artisan about
+      - name: Windows launchers
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\artisan.cmd about
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\artisan.ps1 route:list
+      - run: npm run test:portable
       - run: go test -buildvcs=false -tags production ./...
       - run: go run -buildvcs=false . artisan route:list
 

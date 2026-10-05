@@ -1,5 +1,7 @@
 # Inertia Go + Solid Template
 
+[![Native checks](https://github.com/AndreiTelteu/inertia-go-solid-template/actions/workflows/ci.yml/badge.svg)](https://github.com/AndreiTelteu/inertia-go-solid-template/actions/workflows/ci.yml)
+
 **Go on the server. Solid in the browser. One executable in production.**
 
 A reusable, native template with **Fiber v3**, **inertia-go**, **Inertia v3**, **SolidJS**, TypeScript, and Vite. Includes a Laravel-style route registry, controllers with one action per file, an Artisan CLI, and an interactive feature lab that shows what this community integration actually supports.
@@ -10,6 +12,8 @@ A reusable, native template with **Fiber v3**, **inertia-go**, **Inertia v3**, *
 > This uses community Go and Solid adapters. Compatibility with the official Laravel/React integration is partial. The Solid adapter is a pinned beta, and several features need local helpers. Read the [compatibility notes](#compatibility-and-known-limitations) before choosing this stack.
 
 ## Quick start
+
+Use GitHub’s **Use this template** button to create your own repository, or clone this one:
 
 Requirements: **Go 1.26+**, **Node 22.12+**, and npm. No Docker or external services.
 
@@ -167,7 +171,7 @@ npx playwright install chromium
 ./artisan test
 ```
 
-The suite exercises the real Fiber server with embedded production assets. Browser scenarios run serially to isolate demo counters; port **8102** must be free. Separate commands: `npm run typecheck`, `npm run test:go`, `npm run test:browser`, and `npm run report`.
+The suite exercises the real Fiber server with embedded production assets. Browser scenarios run serially to isolate demo counters; port **8102** must be free. Separate commands: `npm run typecheck`, `npm run test:go`, `npm run test:browser`, `npm run test:portable` (after building), and `npm run report`. The portable smoke test starts the production executable from an empty directory and verifies embedded resources, private manifest paths, and secure session cookies.
 
 See the [verification report](reports/template-verification.md), [project skill](.agents/skills/inertia-go-solid/SKILL.md), and [feature requirements](docs/requirements.md). The skill explains how to extend this stack, use Artisan, and keep compatibility claims tied to tests.
 

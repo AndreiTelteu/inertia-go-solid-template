@@ -93,7 +93,7 @@ Without the production tag, `public.Assets()` returns nil, allowing compilation 
 
 ## Verification
 
-`./artisan test` runs the npm verification pipeline: TypeScript, production build, Go race tests, Chromium, and the generated report. `npm run test:go` or `npm run test:browser` targets one layer. `tests/protocol/template_test.go` exercises Fiber and sessions; `native_features_test.go` checks native builder metadata; `known_limits_test.go` reproduces upstream deficiencies separately.
+`./artisan test` runs the npm verification pipeline: TypeScript, production build, Go race tests, a standalone production smoke test, Chromium, and the generated report. `npm run test:portable` starts the built executable from an empty temporary directory and checks embedded JS/CSS/fonts, private manifest paths, secure session cookies, and absence of a Vite fallback. Native CI runs this check on Linux, Windows, and macOS. `npm run test:go` or `npm run test:browser` targets one layer. `tests/protocol/template_test.go` exercises Fiber and sessions; `native_features_test.go` checks native builder metadata; `known_limits_test.go` reproduces upstream deficiencies separately.
 
 `tests/browser/compatibility.spec.ts` covers retained functional scenarios. `demo.spec.ts` checks working controls, route parameters, hook cleanup, and mobile layout. Browser tests are serial because demonstration counters are process-wide rather than per user. Diagnostic endpoints are disabled in production.
 

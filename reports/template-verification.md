@@ -1,6 +1,6 @@
 # Inertia Go + Solid template verification
 
-Browser run: **2026-10-05T18:35:46.266Z**. **71 passed / 0 non-passing**, across 71 scenarios. This tests this template, rather than a comparison with Laravel/React.
+Browser run: **2026-10-05T18:45:48.900Z**. **71 passed / 0 non-passing**, across 71 scenarios. This tests this template, rather than a comparison with Laravel/React.
 
 ## Checks
 
@@ -9,6 +9,7 @@ Browser run: **2026-10-05T18:35:46.266Z**. **71 passed / 0 non-passing**, across
 | TypeScript | PASS |
 | Embedded production build | PASS |
 | Go tests with race detector | PASS |
+| Portable embedded server | PASS |
 | Chromium browser scenarios | PASS |
 
 Additional smoke checks: 2026-10-05T18:37:22.147Z. Artisan development startup on the LAN, Vite bootstrap, Solid HMR, and Go rebuild/restart were exercised. Desktop/mobile inspection found no overflow or browser errors; the project skill was validated. [Desktop](template-ui-desktop.png), [mobile](template-ui-mobile.png).

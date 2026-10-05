@@ -3,6 +3,7 @@
 package server
 
 import (
+	"bytes"
 	"github.com/andreitelteu/inertia-go-solid-template/public"
 	"io/fs"
 	"strings"
@@ -39,6 +40,16 @@ func TestProductionBuildUsesEmbeddedAssetsFromEmptyRoot(t *testing.T) {
 		response, body := fiberResponse(t, app, "GET", "/build/"+path, nil)
 		if response.StatusCode != 200 || len(body) == 0 {
 			t.Errorf("embedded asset %s: %d", path, response.StatusCode)
+		}
+		expected, err := fs.ReadFile(assets, path)
+		if err != nil {
+			return err
+		}
+		if !bytes.Equal(body, expected) {
+			t.Errorf("embedded asset %s body changed", path)
+		}
+		if contentType := assetContentType(path); contentType != "" && response.Header.Get("Content-Type") != contentType {
+			t.Errorf("embedded asset %s MIME: %q want %q", path, response.Header.Get("Content-Type"), contentType)
 		}
 		return nil
 	}); err != nil {
