@@ -14,6 +14,17 @@ There is one Fiber/fasthttp listener. `server.HTTPHandler` is a testing and embe
 
 Use `./artisan help` as the command inventory. The shell launcher is a convenience for POSIX environments; `go run -buildvcs=false . artisan <command>` invokes the same Go CLI on other platforms. Commands run from the project root and load literal `.env` values; existing process variables take precedence.
 
+Development/build prerequisites are Go 1.26+, Node 22.12+, and npm. On Windows, use Git Bash for `./artisan`, or the native launchers:
+
+```powershell
+.\artisan.cmd install
+.\artisan.cmd dev --port 8081 --vite-port 5174
+# PowerShell alternative, when permitted by the local execution policy:
+.\artisan.ps1 help
+```
+
+The Bash/CMD/PowerShell launchers enter the project directory before invoking Go. Direct `go run ... artisan ...` commands use the current directory, so run them from the repository root. `.gitattributes` keeps Bash files LF and Windows launchers CRLF.
+
 ```sh
 ./artisan install
 ./artisan key:generate
@@ -24,7 +35,7 @@ Use `./artisan help` as the command inventory. The shell launcher is a convenien
 ./artisan test
 ```
 
-`install` runs `npm ci` and `go mod download`. Install the browser runtime with `npx playwright install chromium` when needed for tests. `route:list` prints the method/path/name registry; `routes` is an alias. `about` reports runtime and project information. `key:generate` writes a random 32-byte hex APP_KEY to `.env` without printing it. It refuses to overwrite an existing key unless `--force` deliberately rotates it. Rotation invalidates existing encrypted session cookies.
+`install` runs `npm ci` and `go mod download`. Install the browser runtime with `npx playwright install chromium` when needed for tests. `route:list` prints the method/path/name registry without requiring a frontend build; `routes` is an alias. `about` reports runtime and project information. `key:generate` writes a random 32-byte hex APP_KEY to `.env` without printing it. It refuses to overwrite an existing key unless `--force` deliberately rotates it. Rotation invalidates existing encrypted session cookies.
 
 For a new feature, start with a controller rather than adding handlers to `main.go`:
 
@@ -81,21 +92,44 @@ Production requires a persistent APP_KEY of 64 hex characters. Its session cooki
 
 ## Development and production assets
 
-`./artisan dev` runs the bundled Node watcher and Vite HMR. The watcher rebuilds Go/HTML changes and restarts Fiber after a successful build; an invalid edit leaves the existing server running. Solid edits use Vite HMR. Air is not required. The development server reads `VITE_DEV_SERVER_URL`; Vite handles TSX and CSS entrypoints.
+`./artisan dev` runs the bundled Node watcher and Vite HMR. Go/HTML changes under `app/`, `cmd/`, `routes/`, and `internal/`, plus root `main.go`, `go.mod`, and `go.sum`, trigger a rebuild and restart after a successful build; an invalid edit leaves the existing server running. Changes to `.env` or Go files under `public/` require restarting the development command. Solid edits use Vite HMR. Air is not required. The development server reads `VITE_DEV_SERVER_URL`; Vite handles TSX and CSS entrypoints.
+
+Defaults are `127.0.0.1:8080` for Fiber and port `5173` for Vite. Select free ports rather than stopping an unrelated process. For LAN development:
+
+```sh
+./artisan dev --host 0.0.0.0 --port 8081 --vite-port 5174
+```
+
+The watcher binds Vite to the application host unless `VITE_HOST` overrides it. With a wildcard host it advertises the first non-internal IPv4 address; with multiple interfaces, set `VITE_DEV_SERVER_URL` to the reachable Vite origin, such as `http://<LAN-IP>:5174`. It must be reachable from the browser, not just the Go process. Keep the selected application origin allowed by `vite.config.ts` CORS settings. Development Go binaries have separate generation filenames so Windows does not need to overwrite a running executable.
 
 `npm run build` builds only the Vite frontend into `public/build/`. `./artisan build` runs that build and compiles root `main.go` with `-tags production`, `-trimpath`, and `CGO_ENABLED=0`. The default output is `build/inertia-go-solid-template` or the `.exe` equivalent. Use `--os`, `--arch`, and `--output` for another target; `--skip-frontend` reuses the existing generated bundle and requires it to be current.
 
 `public/embedded_production.go` uses `//go:embed all:build`; `public.Assets()` returns an `fs.FS` rooted at the generated build. The bundle includes JavaScript, CSS, local fonts, and the private `.vite/manifest.json`. The application reads that manifest to resolve assets and hashes it with SHA256 for the Inertia asset version. Fiber serves public bundle files under `/build/` and rejects hidden paths and directory traversal. Manifest access stays private.
 
+Static `ModifyResponse` supplies immutable caching and explicit MIME types for JS/MJS, CSS, WOFF/WOFF2, TTF/OTF, and WASM. Preserve `assetContentType` and `decodedAssetPath`: Windows MIME registrations can be missing or wrong, and `nosniff` makes script/style types significant. `TestStaticAssetTypesIgnoreIncorrectSystemMIMERegistrations` exercises HTTP responses with deliberately incorrect MIME registrations.
+
 Without the production tag, `public.Assets()` returns nil, allowing compilation before Vite generates a bundle. Outside Vite development mode, that build reads disk assets and needs `public/build/`. A production-tagged executable uses its embedded filesystem, overrides dev-server URLs, and requires no external frontend directory, Node, Go, or npm at runtime. Explicit `server.Options.AssetFS` overrides support isolated tests or custom embedding.
 
 `./artisan start` launches the built executable, defaults to production, and accepts `--host`, `--port`, `--env`, and an optional `--output` binary path. `serve` runs the current executable's server directly with host/port/environment options. A shipped executable with no command also serves directly and loads `.env`; process variables win. Production-tagged binaries default to production. Supply APP_KEY and runtime configuration through the environment or a private `.env`. No Docker runtime is required.
+
+Cross-compile after generating the current frontend bundle:
+
+```sh
+./artisan build --os windows --arch amd64 --output build/template-windows.exe --skip-frontend
+./artisan build --os darwin --arch arm64 --output build/template-macos --skip-frontend
+```
+
+These commands prove compilation only. A foreign executable must run on its target OS; `start --output` does not emulate that target. Native CI builds and executes the production smoke test on Linux, Windows, and macOS, and checks Bash or CMD/PowerShell launchers as appropriate.
 
 ## Verification
 
 `./artisan test` runs the npm verification pipeline: TypeScript, production build, Go race tests, a standalone production smoke test, Chromium, and the generated report. `npm run test:portable` starts the built executable from an empty temporary directory and checks embedded JS/CSS/fonts, private manifest paths, secure session cookies, and absence of a Vite fallback. Native CI runs this check on Linux, Windows, and macOS. `npm run test:go` or `npm run test:browser` targets one layer. `tests/protocol/template_test.go` exercises Fiber and sessions; `native_features_test.go` checks native builder metadata; `known_limits_test.go` reproduces upstream deficiencies separately.
 
 `tests/browser/compatibility.spec.ts` covers retained functional scenarios. `demo.spec.ts` checks working controls, route parameters, hook cleanup, and mobile layout. Browser tests are serial because demonstration counters are process-wide rather than per user. Diagnostic endpoints are disabled in production.
+
+Chromium tests expect a compiled executable and use port `8102`. For a focused browser check after changing the app, run `./artisan build`, then `npm exec -- playwright test tests/browser/demo.spec.ts`. `npm run test:portable` also needs the current native binary. Full `./artisan test` rebuilds it automatically; its Go race stage requires a working native C compiler.
+
+Run `go test -buildvcs=false -tags production ./...` after a frontend build when changing embedding or filesystem selection. Protocol asset-serving fixtures use `fstest.MapFS`, matching the embedded filesystem and avoiding Windows cleanup failures from Fiber's cached OS file handles. Use disk fixtures when testing disk-specific behavior; keep the missing-build test backed by a real empty `os.DirFS`. Regression assertions should still verify response bytes, MIME, private paths, and session behavior rather than skipping them on Windows.
 
 ## Fiber request lifetime
 
