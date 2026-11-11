@@ -156,13 +156,29 @@ A controller is a Go package/folder, rather than a class. Each exported action f
 
 The router supports `Get`, `Post`, `Put`, `Patch`, `Delete`, `.Name(...)`, route groups, middleware, and escaped reverse URLs. `/users/37` demonstrates a named route parameter. Fiber owns the HTTP server; its official adaptor bridges the `net/http` API required internally by inertia-go.
 
+## Changelog
+
+Notable changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
 ## Live demo websites
 
 Sites built with this template. Metrics are measured on the production build; `-` means not measured yet.
 
-| Site | Status | Lighthouse (perf / a11y / best practices / SEO) | JS bundle (gzip) | CSS (gzip) | First load (LCP) | SPA navigation after hydration | Binary size | Idle memory |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| [awesomeopensource.dev](https://awesomeopensource.dev/) | Not live yet | - / - / - / - | - | - | - | - | - | - |
+| Metric | [awesomeopensource.dev](https://awesomeopensource.dev/) |
+| --- | --- |
+| Status | Not live yet |
+| Lighthouse performance | - |
+| Lighthouse accessibility | - |
+| Lighthouse best practices | - |
+| Lighthouse SEO | - |
+| JS bundle (gzip) | - |
+| CSS (gzip) | - |
+| First load (LCP) | - |
+| SPA navigation after hydration | - |
+| Binary size | - |
+| Idle memory | - |
+
+Each new site adds a column.
 
 Add your site with a pull request, with the measurement conditions (device, network throttling, Lighthouse version, date) in the PR description.
 
