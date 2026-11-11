@@ -1,5 +1,6 @@
 import { createSignal, For, Show, type ParentProps } from 'solid-js'
 import { Link, usePage } from 'inertia-adapter-solid'
+import { AppErrorBoundary, AsyncErrorBanner } from '../components/error_boundary'
 import { notice, setNotice } from '../lib/demo_state'
 
 const navigation = [
@@ -22,7 +23,8 @@ export default function DemoLayout(props: ParentProps) {
     </aside>
     <main id="demo-content" class="content" tabindex="-1">
       <Show when={notice()}><div role="alert" class="notice"><p>{notice()}</p><button class="secondary" onClick={() => setNotice('')}>Dismiss message</button></div></Show>
-      {props.children}
+      <AsyncErrorBanner />
+      <AppErrorBoundary>{props.children}</AppErrorBoundary>
       <footer>Solid adapter beta.9 · Inertia core v3 · inertia-go v0.10.0. Limitations and local adapters are documented in the project skill.</footer>
     </main>
   </div>

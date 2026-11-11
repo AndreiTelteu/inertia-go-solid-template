@@ -60,6 +60,7 @@ You can also use `go run -buildvcs=false . artisan help` on any supported platfo
 | `./artisan make:controller Users --action index_page,show_user` | Create a controller package with separate action files |
 | `./artisan make:component UserCard` | Create a Solid component |
 | `./artisan make:page Admin/Users` | Create a Solid page, including nested directories |
+| `./artisan deploy` | Build, then install or restart a systemd user service (Linux) |
 | `./artisan route:list` | Print methods, paths, and route names |
 | `./artisan key:generate` | Write a new session encryption key to `.env` |
 | `./artisan test` | TypeScript, embedded build, Go race tests, and Chromium scenarios |
@@ -75,13 +76,26 @@ Scaffolds refuse to overwrite existing files. Register new controllers in `route
 ./artisan start
 ```
 
-The output is `build/inertia-go-solid-template` (`.exe` on Windows). Vite JavaScript, CSS, fonts, and its private manifest are compiled into the executable with `//go:embed`. Static resources are served by Fiber. No `public/build`, Node, npm, or Go installation is needed on the target machine.
+The output is `build/<APP_NAME>` (`.exe` on Windows); `APP_NAME` in `.env` defaults to `inertia-go-solid-template`. Set it per project: the file name is what htop and `ps` show. Vite JavaScript, CSS, fonts, and its private manifest are compiled into the executable with `//go:embed`. Static resources are served by Fiber. No `public/build`, Node, npm, or Go installation is needed on the target machine.
 
 Copy the executable and provide a persistent **`APP_KEY` containing 64 hexadecimal characters** through environment variables or `.env`. The binary can run from a directory without the project:
 
 ```bash
 APP_ENV=production APP_ADDR=0.0.0.0:8080 ./inertia-go-solid-template
 ```
+
+### Deploy with systemd
+
+```bash
+./artisan deploy            # unit name defaults to APP_NAME; --name overrides it
+loginctl enable-linger $USER  # keep it running after logout
+```
+
+The first run writes `~/.config/systemd/user/<name>.service` (working directory = project root, so `.env` is read) and enables it. Later runs only rebuild and restart; an existing unit is never modified, so edit it freely.
+
+### Errors
+
+Unhandled Go errors and panics show a detailed page (message, stack) outside `production` and a generic 500 page in production. Solid render errors are caught by `AppErrorBoundary`, detailed only under `./artisan dev`. Override either wherever you want: pass `fallback` to `AppErrorBoundary`, or set your own Fiber `ErrorHandler`.
 
 Production cookies are encrypted, HttpOnly, SameSite, and Secure; use HTTPS at the browser, typically through your reverse proxy. Demo counters and diagnostic endpoints are disabled in production. `--env demo` keeps the lab interactive over local HTTP and uses an ephemeral key unless configured.
 
@@ -141,6 +155,16 @@ tests/browser/ tests/protocol/      Browser, protocol, and limitation tests
 A controller is a Go package/folder, rather than a class. Each exported action factory returns a Fiber handler and lives in its own snake_case file. Registration is explicit.
 
 The router supports `Get`, `Post`, `Put`, `Patch`, `Delete`, `.Name(...)`, route groups, middleware, and escaped reverse URLs. `/users/37` demonstrates a named route parameter. Fiber owns the HTTP server; its official adaptor bridges the `net/http` API required internally by inertia-go.
+
+## Live demo websites
+
+Sites built with this template. Metrics are measured on the production build; `-` means not measured yet.
+
+| Site | Status | Lighthouse (perf / a11y / best practices / SEO) | JS bundle (gzip) | CSS (gzip) | First load (LCP) | SPA navigation after hydration | Binary size | Idle memory |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| [awesomeopensource.dev](https://awesomeopensource.dev/) | Not live yet | - / - / - / - | - | - | - | - | - | - |
+
+Add your site with a pull request, with the measurement conditions (device, network throttling, Lighthouse version, date) in the PR description.
 
 ## Compatibility and known limitations
 

@@ -7,7 +7,6 @@ import (
 	"github.com/andreitelteu/inertia-go-solid-template/routes"
 	"github.com/gofiber/fiber/v3"
 	"github.com/gofiber/fiber/v3/middleware/adaptor"
-	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/gofiber/fiber/v3/middleware/static"
 	"io/fs"
 	"net/http"
@@ -66,9 +65,10 @@ func NewWithOptions(root string, options Options) (*fiber.App, error) {
 		// Keep encoded slashes inside one :parameter. The inertia boundary decodes
 		// the parameter once; reverse URLs use PathEscape on each segment.
 		UnescapePath: false, BodyLimit: 8 << 20,
+		ErrorHandler: errorHandler(options.Environment),
 		ReadTimeout: 30 * time.Second, WriteTimeout: 30 * time.Second, IdleTimeout: 60 * time.Second,
 	})
-	app.Use(recover.New())
+	app.Use(recoverMiddleware())
 	app.Use(func(c fiber.Ctx) error {
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")

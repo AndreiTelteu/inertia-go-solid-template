@@ -2,6 +2,7 @@ import { render } from 'solid-js/web'
 import { createInertiaApp } from 'inertia-adapter-solid'
 import './lib/demo_state'
 import '../css/app.css'
+import { AppErrorBoundary } from './components/error_boundary'
 import DemoLayout from './layouts/demo_layout'
 import Home from './pages/home_page'
 import Other from './pages/other_page'
@@ -27,5 +28,5 @@ createInertiaApp({
     if (!pages[name]) throw new Error(`Unknown Inertia component: ${name}`)
     return pages[name]
   },
-  setup: ({ el, App, props }) => { render(() => <App {...props} />, el); window.__lab.ready = true },
+  setup: ({ el, App, props }) => { render(() => <AppErrorBoundary><App {...props} /></AppErrorBoundary>, el); window.__lab.ready = true },
 })

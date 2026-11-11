@@ -5,6 +5,9 @@ import path from 'node:path'
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 try { process.loadEnvFile(path.join(root, '.env')) }
 catch (error) { if (error.code !== 'ENOENT') throw error }
+// Same slug rules as internal/artisan/name.go: the file name is what htop shows.
+export const appName = (process.env.APP_NAME ?? '').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^[-_]+|[-_]+$/g, '') || 'inertia-go-solid-template'
+export const binaryName = appName + (process.platform === 'win32' ? '.exe' : '')
 export function execute(command, args, options = {}) {
   return new Promise((resolve, reject) => {
     // npm is a .cmd launcher on Windows and needs the native command processor.

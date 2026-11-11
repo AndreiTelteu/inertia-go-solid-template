@@ -180,3 +180,22 @@ func TestRouteListWorksWithoutFrontendBuild(t *testing.T) {
 		}
 	}
 }
+
+func TestAppNameBecomesSafeBinaryAndServiceName(t *testing.T) {
+	for input, want := range map[string]string{"": defaultAppName, "My Shop!": "my-shop", "  api_v2 ": "api_v2", "../x": "x", "***": defaultAppName} {
+		t.Setenv("APP_NAME", input)
+		if got := AppName(); got != want {
+			t.Errorf("APP_NAME=%q: got %q, want %q", input, got, want)
+		}
+	}
+	t.Setenv("APP_NAME", "my-shop")
+	if got := defaultBinary("linux"); got != filepath.Join("build", "my-shop") {
+		t.Errorf("binary %q", got)
+	}
+	unit := unitFile("my-shop", "/srv/shop", "/srv/shop/build/my-shop")
+	for _, want := range []string{"ExecStart=/srv/shop/build/my-shop\n", "WorkingDirectory=/srv/shop\n", "Description=my-shop\n"} {
+		if !strings.Contains(unit, want) {
+			t.Errorf("unit missing %q", want)
+		}
+	}
+}

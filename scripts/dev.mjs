@@ -3,7 +3,7 @@ import { watch } from 'node:fs'
 import { mkdir, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { networkInterfaces } from 'node:os'
-import { execute, root, goEnv, terminate } from './process.mjs'
+import { appName, execute, root, goEnv, terminate } from './process.mjs'
 
 await mkdir(path.join(root, 'build'), { recursive: true })
 const vitePort = process.env.VITE_PORT ?? '5173'
@@ -29,7 +29,7 @@ async function rebuild() {
   building = true
   try {
     // Compile separately so an invalid edit does not stop the working server.
-    const binary = path.join(root, 'build', `server-dev-${process.pid}-${++generation}${process.platform === 'win32' ? '.exe' : ''}`)
+    const binary = path.join(root, 'build', `${appName}-dev-${process.pid}-${++generation}${process.platform === 'win32' ? '.exe' : ''}`)
     await execute('go', ['build', '-o', binary, '.'], { env: goEnv })
     await terminate(server)
     if (serverBinary) await rm(serverBinary, { force: true })

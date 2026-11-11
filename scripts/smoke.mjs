@@ -5,10 +5,10 @@ import { copyFile, mkdtemp, rm } from 'node:fs/promises'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
-import { root, terminate } from './process.mjs'
+import { binaryName, root, terminate } from './process.mjs'
 
 const directory = await mkdtemp(path.join(tmpdir(), 'inertia-go-solid-smoke-'))
-const name = `inertia-go-solid-template${process.platform === 'win32' ? '.exe' : ''}`
+const name = binaryName
 const executable = path.join(directory, name)
 let child
 let output = ''

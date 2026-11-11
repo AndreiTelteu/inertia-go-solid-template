@@ -26,6 +26,11 @@ const help = `inertia-go-solid-template artisan
                              Vite HMR and Go rebuild watcher
   build [--os OS --arch ARCH --output FILE --skip-frontend]
                              Build one executable with embedded frontend
+  deploy [--name NAME --skip-frontend]
+                             Build, then install (first run) or restart the systemd
+                             user service ~/.config/systemd/user/NAME.service
+                             (NAME defaults to APP_NAME). An existing unit file is
+                             never modified.
   start [--host HOST --port N --env production|demo]
                              Run the built executable (default: production)
   serve [--host HOST --port N --env ENV]
@@ -135,6 +140,8 @@ func Run(args []string, out io.Writer) error {
 		return generateKey(root, op.booleans["force"], out)
 	case "build":
 		return build(root, rest, out)
+	case "deploy":
+		return deploy(root, rest, out)
 	case "dev":
 		op, err := parse(rest, "host port vite-port", "")
 		if err != nil {
@@ -206,7 +213,7 @@ func Run(args []string, out io.Writer) error {
 		case "routes", "route:list":
 			return printRoutes(out)
 		default:
-			_, err = fmt.Fprintf(out, "inertia-go-solid-template\nGo: %s\nPlatform: %s/%s\nRoot: %s\n", runtime.Version(), runtime.GOOS, runtime.GOARCH, root)
+			_, err = fmt.Fprintf(out, "%s\nGo: %s\nPlatform: %s/%s\nRoot: %s\n", AppName(), runtime.Version(), runtime.GOOS, runtime.GOARCH, root)
 			return err
 		}
 	default:
@@ -215,7 +222,7 @@ func Run(args []string, out io.Writer) error {
 }
 
 func defaultBinary(goos string) string {
-	name := "inertia-go-solid-template"
+	name := AppName()
 	if goos == "windows" {
 		name += ".exe"
 	}

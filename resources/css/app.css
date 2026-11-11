@@ -65,3 +65,12 @@ footer { margin-block-start: 3rem; padding-block-start: 1rem; border-block-start
 .skip-link:focus { top: 1rem; }
 @media (max-width: 760px) { .app-shell { grid-template-columns: minmax(0, 1fr); } .sidebar { padding: 1.2rem; border-inline-end: 0; border-block-end: 1px solid var(--border); } .sidebar nav { flex-direction: row; overflow-x: auto; padding-block-end: .5rem; } .sidebar nav a { white-space: nowrap; } .sidebar-description { margin-block-end: .75rem; } .layout-state { display: flex; gap: .75rem; align-items: center; margin-block-start: .75rem; padding-block-start: .75rem; } .layout-state label, .layout-state p { margin: 0; } .layout-state p { display: none; } .content { padding: 1.4rem 1.2rem; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+
+/* error boundary */
+.error-panel { margin-block: 1rem; padding: 1.25rem 1.5rem; border: 1px solid #a52a25; border-radius: 8px; background: #fff; }
+.error-panel h2 { margin-block: .25rem .5rem; font-size: 1.15rem; }
+.error-panel .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-block-start: 1rem; }
+.error-tag { display: inline-block; padding: .05rem .6rem; border-radius: 99px; background: #a52a25; color: #fff; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.error-message { font-weight: 600; color: #a52a25; word-break: break-word; }
+.error-panel pre { max-height: 20rem; overflow: auto; padding: 1rem; border-radius: 8px; background: #1d302c; color: #e8eee7; font-size: .8rem; white-space: pre-wrap; word-break: break-word; }
+.error-banner { position: sticky; top: 0; z-index: 20; display: grid; gap: .5rem; margin-block-end: 1rem; }
